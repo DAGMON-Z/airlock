@@ -32,7 +32,7 @@ function setAppCheckDebugToken(value: string | true): void {
 function startAppCheck(app: FirebaseApp): void {
   if (!APP_CHECK_SITE_KEY) return
   // The debug token must be set before initializeAppCheck runs.
-  if (APP_CHECK_DEBUG_TOKEN) setAppCheckDebugToken(APP_CHECK_DEBUG_TOKEN)
+  if (import.meta.env.DEV && APP_CHECK_DEBUG_TOKEN) setAppCheckDebugToken(APP_CHECK_DEBUG_TOKEN)
   else if (import.meta.env.DEV) setAppCheckDebugToken(true)
   try {
     initializeAppCheck(app, {
