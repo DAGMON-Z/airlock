@@ -6,7 +6,7 @@ Airlock explains confusing personal documents (blood tests, rental contracts, ba
 
 Built for [#BuildHybridAI 2026](https://firebasehybridaihackathon.devpost.com/) with **Firebase AI Logic hybrid inference**.
 
-![CI](https://github.com/OWNER/airlock/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/DAGMON-Z/airlock/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 
 ![The check screen: what stays on this device, and exactly what is sent](docs/check-screen.png)

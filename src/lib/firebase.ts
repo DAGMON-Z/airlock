@@ -2,27 +2,31 @@ import { getApp, getApps, initializeApp, type FirebaseApp, type FirebaseOptions 
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
 import { getAI, GoogleAIBackend, type AI } from 'firebase/ai'
 
-/** Reads a VITE_ variable, treating empty strings as unset. */
-export function readEnv(name: string): string | undefined {
-  const value: unknown = import.meta.env[name]
+/**
+ * Normalizes a VITE_ variable, treating empty strings as unset.
+ * Callers pass `import.meta.env.VITE_X` directly: a static read lets Vite inline only that value,
+ * whereas a dynamic `import.meta.env[name]` makes it embed every VITE_ variable in the bundle.
+ */
+export function readEnv(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined
 }
 
 const config: FirebaseOptions = {
-  apiKey: readEnv('VITE_FIREBASE_API_KEY'),
-  authDomain: readEnv('VITE_FIREBASE_AUTH_DOMAIN'),
-  projectId: readEnv('VITE_FIREBASE_PROJECT_ID'),
-  storageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: readEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: readEnv('VITE_FIREBASE_APP_ID'),
+  apiKey: readEnv(import.meta.env.VITE_FIREBASE_API_KEY),
+  authDomain: readEnv(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  projectId: readEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: readEnv(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: readEnv(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  appId: readEnv(import.meta.env.VITE_FIREBASE_APP_ID),
 }
 
 export const firebaseConfigured: boolean = Boolean(
-  readEnv('VITE_FIREBASE_API_KEY') && readEnv('VITE_FIREBASE_PROJECT_ID') && readEnv('VITE_FIREBASE_APP_ID'),
+  readEnv(import.meta.env.VITE_FIREBASE_API_KEY) && readEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID) && readEnv(import.meta.env.VITE_FIREBASE_APP_ID),
 )
 
-const APP_CHECK_SITE_KEY = readEnv('VITE_RECAPTCHA_ENTERPRISE_SITE_KEY')
-const APP_CHECK_DEBUG_TOKEN = readEnv('VITE_APPCHECK_DEBUG_TOKEN')
+const APP_CHECK_SITE_KEY = readEnv(import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY)
+// Dev-only: in production builds DEV is false, so the token is never inlined into the bundle.
+const APP_CHECK_DEBUG_TOKEN = import.meta.env.DEV ? readEnv(import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) : undefined
 
 /** App Check reads this global to accept a registered debug token in local development. */
 function setAppCheckDebugToken(value: string | true): void {

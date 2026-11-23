@@ -400,7 +400,7 @@ function sourceOf(raw: InferenceSource | undefined): InferenceWhere {
 }
 
 function cloudModelName(): string {
-  return readEnv('VITE_CLOUD_MODEL') ?? DEFAULT_CLOUD_MODEL
+  return readEnv(import.meta.env.VITE_CLOUD_MODEL) ?? DEFAULT_CLOUD_MODEL
 }
 
 export async function explain(args: {
