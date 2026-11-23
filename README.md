@@ -1,0 +1,109 @@
+# Airlock
+
+**Ask AI about private documents — without telling it who you are.**
+
+Airlock explains confusing personal documents (blood tests, rental contracts, bank letters) using a powerful cloud AI, while your name, ID numbers, phone, address and account numbers never leave your device.
+
+Built for [#BuildHybridAI 2026](https://firebasehybridaihackathon.devpost.com/) with **Firebase AI Logic hybrid inference**.
+
+![CI](https://github.com/OWNER/airlock/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/badge/license-Apache--2.0-blue)
+
+![The check screen: what stays on this device, and exactly what is sent](docs/check-screen.png)
+
+## The problem
+
+People hold documents they need explained but don't want to upload: blood test results, rental contracts, bank letters. Today they choose between privacy (keep it, stay confused) and help (upload it, hand a company their name, ID and health data). Airlock removes that trade-off.
+
+## How it works
+
+1. **Add** a document: paste text or choose a photo.
+2. **On-device AI hides your details.** Gemini Nano, running inside Chrome, finds everything that identifies you and swaps each item for a placeholder such as `[NAME_1]`. A pattern check runs alongside it as a safety net. The list of real values (the "vault") stays in the page's memory and is never sent anywhere.
+3. **You check** a side-by-side view: what stays on this device, and exactly what will be sent. You can hide more or un-hide anything.
+4. **Cloud AI explains** the anonymised version.
+5. **Your device puts the real details back** into the answer.
+
+## Why this needs hybrid inference
+
+Each model does a job the other cannot:
+
+| Step | Firebase AI Logic mode | Why |
+|---|---|---|
+| Read a photo of a document | `ONLY_ON_DEVICE` | The raw document must not leave the device |
+| Find personal details | `ONLY_ON_DEVICE` | Same. It can never silently fall back to the cloud |
+| Explain the anonymised text | `PREFER_IN_CLOUD` | Needs a stronger model. Falls back to on-device when offline |
+
+A final check runs before every cloud call: if any hidden value is still present in the outgoing text, the request is blocked.
+
+Every answer shows where it was produced, using `response.inferenceSource`.
+
+All model calls go through Firebase AI Logic (`firebase/ai`). See `src/lib/ai.ts`.
+
+## Architecture
+
+```
+            ON THIS DEVICE                                   CLOUD
+ ┌───────────────────────────────────────┐
+ │ Photo ──► Gemini Nano (ONLY_ON_DEVICE) │
+ │           transcribes the document     │
+ │                                        │
+ │ Text ──► Gemini Nano (ONLY_ON_DEVICE)  │
+ │          + pattern safety net          │
+ │          finds identifiers             │
+ │                 │                      │
+ │                 ▼                      │
+ │   Vault: "Samira Haddad" = [NAME_1]    │   anonymised text   ┌──────────────────┐
+ │   (never leaves the page)  ────────────┼───── leak gate ────►│ Gemini           │
+ │                                        │                     │ (PREFER_IN_CLOUD)│
+ │   Answer with real details  ◄──────────┼── answer with ──────│ explains it      │
+ │   put back locally                     │   placeholders      └──────────────────┘
+ └───────────────────────────────────────┘
+```
+
+| File | Role |
+|---|---|
+| `src/lib/ai.ts` | Every model call, through `firebase/ai`. Inference modes and the leak gate live here. |
+| `src/lib/redact.ts` | Pure functions: pattern detection, the vault, placeholder swap and restore. Fully unit tested. |
+| `src/lib/firebase.ts` | Firebase app, AI Logic and App Check setup. |
+| `src/ui/` | The three screens: Add, Check, Understand. |
+
+## Run it locally
+
+Requirements: Node 20+, and desktop Chrome 139+ for the on-device model.
+
+```bash
+npm install
+cp .env.example .env    # then fill in your Firebase web app config
+npm run dev
+```
+
+### Firebase setup
+
+1. Create a project in the [Firebase console](https://console.firebase.google.com/) and add a **Web app**. Copy its config values into `.env`.
+2. Open **AI Services > AI Logic**, click **Get started**, and choose the **Gemini Developer API**.
+3. Set up **App Check**:
+   - Register the web app with the reCAPTCHA Enterprise provider and put the site key in `VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`.
+   - For local development, run the app once, copy the debug token printed in the browser console, and add it under **App Check > Apps > Manage debug tokens**.
+
+### Turn on the on-device model in Chrome
+
+1. Open `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input` and set it to **Enabled**, then relaunch Chrome.
+2. Open Airlock and click the download button in the status pill. The first download can take several minutes.
+
+Without the on-device model, Airlock still works in a reduced mode: only the pattern check runs, and you hide names yourself by selecting them.
+
+## Tests
+
+```bash
+npm test
+```
+
+## Limits
+
+- The on-device model can miss an identifier. That is why the review step exists. Always read the right-hand pane before sending.
+- Airlock gives general information, not medical, legal or financial advice.
+- On-device inference currently needs Chrome on a desktop computer.
+
+## License
+
+Apache 2.0. See [LICENSE](LICENSE).
