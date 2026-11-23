@@ -4,6 +4,8 @@
 
 Airlock explains confusing personal documents (blood tests, rental contracts, bank letters) using a powerful cloud AI, while your name, ID numbers, phone, address and account numbers never leave your device.
 
+**Live demo: https://airlock-35fc7.web.app** (desktop Chrome for the on-device model, see [below](#turn-on-the-on-device-model-in-chrome))
+
 Built for [#BuildHybridAI 2026](https://firebasehybridaihackathon.devpost.com/) with **Firebase AI Logic hybrid inference**.
 
 ![CI](https://github.com/DAGMON-Z/airlock/actions/workflows/ci.yml/badge.svg)

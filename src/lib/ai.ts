@@ -363,6 +363,7 @@ export async function detectEntities(text: string, existing?: Vault): Promise<De
 const EXPLAIN_RULES = `The document has been anonymised. Tokens in square brackets such as [NAME_1] or [ID_1] are placeholders for private details.
 - Keep every placeholder EXACTLY as written, in square brackets, whenever you refer to it.
 - Never guess or invent what a placeholder stands for.
+- Only use a placeholder when you mean the exact detail it replaces in the document. Never attach one to a different item, a test result or a question, for example in brackets after it.
 - Explain in plain, simple language for a non-expert, in the same language as the document.`
 
 const EXPLAIN_STRUCTURE = `Use this structure, with these headings in bold:
