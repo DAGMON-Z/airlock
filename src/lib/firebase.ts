@@ -48,15 +48,27 @@ function startAppCheck(app: FirebaseApp): void {
   }
 }
 
+let appInstance: FirebaseApp | undefined
+
+/**
+ * Initializes Firebase and starts App Check once. Called at startup so App Check (and its
+ * reCAPTCHA Enterprise script) is running before any getAI / getGenerativeModel call.
+ */
+export function initFirebase(): FirebaseApp | undefined {
+  if (!firebaseConfigured) return undefined
+  if (!appInstance) {
+    appInstance = getApps().length > 0 ? getApp() : initializeApp(config)
+    startAppCheck(appInstance)
+  }
+  return appInstance
+}
+
 let aiInstance: AI | undefined
 
 /** Lazily creates the Firebase AI Logic instance. Throws when Firebase is not configured. */
 export function getAi(): AI {
-  if (!firebaseConfigured) throw new Error('Firebase is not configured')
-  if (!aiInstance) {
-    const app = getApps().length > 0 ? getApp() : initializeApp(config)
-    startAppCheck(app)
-    aiInstance = getAI(app, { backend: new GoogleAIBackend() })
-  }
+  const app = initFirebase()
+  if (!app) throw new Error('Firebase is not configured')
+  if (!aiInstance) aiInstance = getAI(app, { backend: new GoogleAIBackend() })
   return aiInstance
 }
