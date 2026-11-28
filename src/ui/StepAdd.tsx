@@ -74,16 +74,14 @@ export function StepAdd({ text, checkedText, vault, onTextChange, onAdvance }: S
         return
       }
 
-      try {
-        await prepareLocalModel((fraction) => {
-          setProgress(fraction)
-          setLocalStatus('downloading')
-        })
-      } catch {
-        // Pattern checks still run without the on-device model.
+      // Never wait for a multi-GB model download here. If the model is not on this device yet,
+      // start the download in the background (this click lets Chrome begin it) and check now
+      // with the pattern safety net; the status pill shows the download's progress.
+      const status = await getLocalStatus()
+      setLocalStatus(status)
+      if ((status === 'downloadable' || status === 'downloading') && progress === null) {
+        void downloadModel()
       }
-      setProgress(null)
-      setLocalStatus(await getLocalStatus())
 
       const result = await detectEntities(
         text,

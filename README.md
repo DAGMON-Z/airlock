@@ -69,6 +69,28 @@ All model calls go through Firebase AI Logic (`firebase/ai`). See `src/lib/ai.ts
 | `src/lib/firebase.ts` | Firebase app, AI Logic and App Check setup. |
 | `src/ui/` | The three screens: Add, Check, Understand. |
 
+## Firebase products used
+
+| Product | Used for |
+|---|---|
+| **Firebase AI Logic** (`firebase/ai`) | Hybrid inference: Gemini Nano on-device (`ONLY_ON_DEVICE`) and Gemini in the cloud (`PREFER_IN_CLOUD`) |
+| **App Check** with reCAPTCHA Enterprise | Starts at page load and protects every AI Logic call |
+| **Firebase Hosting** | The live demo |
+
+## Try it (for judges)
+
+1. Open **https://airlock-35fc7.web.app** in desktop Chrome.
+2. Click an example under **Try an example**, for instance **Blood test report** (all examples are fictional).
+3. Click **Hide my details**. The Check screen shows what stays on the device and exactly what will be sent.
+4. Click **Send the safe version**. The cloud answer comes back with placeholders, and your device puts the real details back in.
+5. Open **See exactly what the AI received** to confirm no hidden detail left the device.
+
+On-device AI: if the status pill says **Download now** or **Start download**, click it. Chrome only starts the Gemini Nano download after a click, and `chrome://on-device-internals` shows its progress. Without the model the app still works with the pattern check (numbers, emails, labelled names, addresses and clinics).
+
+## Built during the submission period
+
+Everything in this repository was written for #BuildHybridAI 2026, starting 23 November 2026: the hybrid detection pipeline, the vault and leak gate, the three-step UI, the pattern safety net and its tests, and the App Check and Hosting setup. No pre-existing project code is included. Third-party code is limited to the open-source dependencies in `package.json` (React, the Firebase JS SDK, Vite, Vitest) and the Fraunces, Atkinson Hyperlegible and IBM Plex Mono fonts (SIL Open Font License) via Fontsource.
+
 ## Run it locally
 
 Requirements: Node 20+, and desktop Chrome 139+ for the on-device model.
@@ -90,9 +112,9 @@ npm run dev
 ### Turn on the on-device model in Chrome
 
 1. Open `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input` and set it to **Enabled**, then relaunch Chrome.
-2. Open Airlock and click the download button in the status pill. The first download can take several minutes.
+2. Open Airlock and click **Download now** (or **Start download**) in the status pill. Chrome only starts the download after a click on a page that uses the model; `chrome://on-device-internals` shows its progress. The first download is several GB and can take a while.
 
-Without the on-device model, Airlock still works in a reduced mode: only the pattern check runs, and you hide names yourself by selecting them.
+Without the on-device model, Airlock still works in a reduced mode: only the pattern check runs. It catches numbers, emails, labelled names ("Patient name:", "Tenant:", "Dr."), street addresses and labelled clinics, and you select anything else it missed.
 
 ## Tests
 

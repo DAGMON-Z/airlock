@@ -17,7 +17,7 @@ function copyFor(status: LocalModelStatus, percent: number | null): string {
       return 'On-device AI needs a one-time download'
     case 'downloading':
       return percent === null
-        ? 'Downloading on-device AI…'
+        ? 'On-device AI not ready yet'
         : `Downloading on-device AI · ${percent}%`
     case 'unavailable':
       return 'On-device AI not available in this browser — basic protection only'
@@ -36,6 +36,14 @@ export function StatusPill({ status, progress, onDownload }: StatusPillProps) {
       {status === 'downloadable' && (
         <button type="button" className="btn btn--small btn--ghost" onClick={onDownload}>
           Download now
+        </button>
+      )}
+
+      {/* Chrome reports "downloading" before any page has asked for the model, and then waits
+          for a click. With no progress to show, offer that click instead of waiting forever. */}
+      {status === 'downloading' && percent === null && (
+        <button type="button" className="btn btn--small btn--ghost" onClick={onDownload}>
+          Start download
         </button>
       )}
 

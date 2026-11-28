@@ -46,7 +46,7 @@ const MAX_IMAGE_SIDE = 1600
 const PHOTO_UNAVAILABLE =
   'Reading photos needs the on-device model, which is not available in this browser. Paste the text instead.'
 const LOCAL_ONLY_WARNING =
-  'On-device model not available — only pattern matching ran. Review carefully and hide names by selecting them.'
+  'On-device model not available, so only the pattern check ran. It finds labelled names, addresses and numbers but can miss others. Read the right-hand side and select anything it missed.'
 
 export class LeakError extends Error {
   leaks: Entity[]
@@ -125,7 +125,8 @@ export async function prepareLocalModel(onProgress?: (fraction: number) => void)
     }
     return await getLocalStatus()
   } catch {
-    return 'unavailable'
+    // A failed or refused download does not make the model unavailable: report what Chrome says.
+    return getLocalStatus()
   }
 }
 
@@ -363,6 +364,7 @@ export async function detectEntities(text: string, existing?: Vault): Promise<De
 const EXPLAIN_RULES = `The document has been anonymised. Tokens in square brackets such as [NAME_1] or [ID_1] are placeholders for private details.
 - Keep every placeholder EXACTLY as written, in square brackets, whenever you refer to it.
 - Never guess or invent what a placeholder stands for.
+- Different placeholders can stand for the same person or place, for example a full name and a surname on its own. Never point out a mismatch or inconsistency between placeholders.
 - Only use a placeholder when you mean the exact detail it replaces in the document. Never attach one to a different item, a test result or a question, for example in brackets after it.
 - Explain in plain, simple language for a non-expert, in the same language as the document.`
 

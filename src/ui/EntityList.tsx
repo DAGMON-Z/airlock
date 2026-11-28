@@ -25,7 +25,7 @@ export function EntityList({ entities, onToggle }: EntityListProps) {
             const shown = !entity.redacted
             return (
               <li
-                key={entity.placeholder}
+                key={entity.value}
                 className={shown ? 'entity entity--shown' : 'entity'}
               >
                 <div className="entity-main">

@@ -57,6 +57,32 @@ const hasDigit = (value: string): boolean => /\d/.test(value)
 // A value token: contains at least one digit, e.g. "448812", "CU-7741920", "X123".
 const ID_TOKEN = '[A-Za-z0-9/-]*\\d[A-Za-z0-9/-]*'
 
+/** Regex source matching a label in any letter case without the `i` flag, so name capitals still count. */
+function anyCase(label: string): string {
+  return label.replace(/[A-Za-z]/g, (ch) => `[${ch.toLowerCase()}${ch.toUpperCase()}]`)
+}
+
+// A capitalised word, e.g. "Samira", "O'Neil", "Al-Sayed". Words are joined by spaces or tabs only,
+// never line breaks, so a name cannot run into the next line.
+const CAP_WORD = "\\p{Lu}[\\p{L}'\u2019-]*"
+const HONORIFIC = '(?:Mr|Mrs|Ms|Miss|Mx|Dr|Prof)\\.?'
+const NAME_LABELS = [
+  'patient name', 'full name', 'name', 'patient', 'landlord', 'tenant', 'lessor', 'lessee', 'referring doctor',
+  'doctor', 'physician', 'consultant', 'customer name', 'customer', 'account holder', 'account name',
+  'applicant', 'employee', 'policyholder', 'signed by', 'in the name of', 'attention', 'attn',
+]
+  .sort((a, b) => b.length - a.length)
+  .map((label) => anyCase(label).replace(/ /g, '\\s+'))
+  .join('|')
+const ORG_LABELS = ['requesting clinic', 'clinic', 'hospital', 'employer', 'company', 'school', 'university']
+  .sort((a, b) => b.length - a.length)
+  .map((label) => anyCase(label).replace(/ /g, '\\s+'))
+  .join('|')
+const STREET_SUFFIX =
+  'Street|St\\.?|Road|Rd\\.?|Avenue|Ave\\.?|Row|Lane|Ln\\.?|Drive|Boulevard|Blvd\\.?|Way|View|Close|Court|Place|Square|Terrace|Crescent|Highway|Gardens|Corniche'
+// Comma-separated parts after the street: "Block C", "Riverside District", "Cairo 11511".
+const ADDRESS_PART = `(?:Block|Building|Floor)\\s+\\w+|${CAP_WORD}(?:[ \\t]+${CAP_WORD})*(?:[ \\t]+\\d{3,6})?`
+
 const RULES: Rule[] = [
   {
     type: 'EMAIL',
@@ -131,6 +157,46 @@ const RULES: Rule[] = [
     re: /(?<![\d.,/+-])\d{9,}(?!\d)/gd,
     group: 0,
     accept: () => true,
+  },  {
+    // "14 Juniper Row, Block C, Riverside District, Cairo 11511", "Flat 4, 17 Acacia Road, Nasr City".
+    type: 'ADDRESS',
+    re: new RegExp(
+      `(?:(?:Flat|Apt\\.?|Apartment|Unit|Suite)\\s+\\w+,\\s*)?(?<![\\p{L}\\p{N}])\\d{1,5}[A-Za-z]?[ \\t]+(?:${CAP_WORD}[ \\t]+){0,3}(?:${STREET_SUFFIX})(?![\\p{L}])(?:,[ \\t]*(?:${ADDRESS_PART}))*`,
+      'gdu',
+    ),
+    group: 0,
+    accept: () => true,
+  },
+  {
+    // A name after a label: "Patient name: Samira Noor Haddad", "Tenant: Lina Mahmoud Serag".
+    type: 'NAME',
+    re: new RegExp(
+      `(?<![\\p{L}])(?:${NAME_LABELS})[ \\t]*[:\\-\u2013][ \\t]*(?:${HONORIFIC}[ \\t]+)?(${CAP_WORD}(?:[ \\t]+${CAP_WORD}){1,3})`,
+      'gdu',
+    ),
+    group: 1,
+    accept: () => true,
+  },
+  {
+    // A name after a title: "Dr. Karim Adel Mansour", "Ms. Yasmin Kareem Adel", "Dear Ms. Adel".
+    type: 'NAME',
+    re: new RegExp(`(?<![\\p{L}])${HONORIFIC}[ \\t]+(${CAP_WORD}(?:[ \\t]+${CAP_WORD}){0,3})`, 'gdu'),
+    group: 1,
+    accept: (value) => value.length >= 3,
+  },
+  {
+    // "in the name of Omar Tarek Fawzy" (no colon).
+    type: 'NAME',
+    re: new RegExp(`(?<![\\p{L}])${anyCase('in the name of')}[ \\t]+(${CAP_WORD}(?:[ \\t]+${CAP_WORD}){1,3})`, 'gdu'),
+    group: 1,
+    accept: () => true,
+  },
+  {
+    // An organisation after a label: "Requesting clinic: Lakeview Family Health Clinic".
+    type: 'ORG',
+    re: new RegExp(`(?<![\\p{L}])(?:${ORG_LABELS})[ \\t]*:[ \\t]*(${CAP_WORD}(?:[ \\t]+${CAP_WORD}){0,5})`, 'gdu'),
+    group: 1,
+    accept: () => true,
   },
 ]
 
@@ -183,16 +249,32 @@ function highestIndexByType(entities: Entity[]): Map<EntityType, number> {
   return highest
 }
 
+/** The words of a value, normalised, e.g. "Yasmin Kareem Adel" -> ["yasmin", "kareem", "adel"]. */
+function wordsOf(value: string): string[] {
+  return norm(value).split(' ')
+}
+
 /**
  * Adds newly found values to a vault. Existing entities keep their placeholders.
  * Values are deduplicated case-insensitively; values shorter than 2 characters are ignored.
+ * A one-word name that is part of a longer name ("Adel" in "Yasmin Kareem Adel") shares that
+ * name's placeholder, so the cloud model sees one person, not two.
  */
 export function buildVault(found: Found[], existing?: Vault): Vault {
   const entities: Entity[] = existing ? [...existing.entities] : []
   const seen = new Set(entities.map((entity) => norm(entity.value)))
   const highest = highestIndexByType(entities)
 
+  const isNamePart = (item: Found): boolean =>
+    item.type === 'NAME' &&
+    wordsOf(item.value).length === 1 &&
+    [...entities, ...found].some(
+      (other) => other.type === 'NAME' && wordsOf(other.value).length > 1 && wordsOf(other.value).includes(norm(item.value)),
+    )
+
+  const parts = found.filter(isNamePart)
   for (const item of found) {
+    if (parts.includes(item)) continue
     const value = item.value.trim()
     const key = norm(value)
     if (key.length < 2 || seen.has(key)) continue
@@ -207,6 +289,18 @@ export function buildVault(found: Found[], existing?: Vault): Vault {
       source: item.source,
       redacted: true,
     })
+  }
+
+  for (const item of parts) {
+    const value = item.value.trim()
+    const key = norm(value)
+    if (key.length < 2 || seen.has(key)) continue
+    const whole = entities.find(
+      (entity) => entity.type === 'NAME' && wordsOf(entity.value).length > 1 && wordsOf(entity.value).includes(key),
+    )
+    if (!whole) continue
+    seen.add(key)
+    entities.push({ value, type: 'NAME', placeholder: whole.placeholder, source: item.source, redacted: whole.redacted })
   }
   return { entities }
 }
@@ -235,7 +329,11 @@ const PLACEHOLDER_ANY = /\[\s*([A-Za-z]+)[ _]+(\d+)\s*\]|\b([A-Za-z]+)_(\d+)\b/g
 /** Puts real values back into text the model produced. */
 export function rehydrate(text: string, vault: Vault): string {
   const valueByKey = new Map<string, string>()
-  for (const entity of vault.entities) valueByKey.set(placeholderKey(entity.placeholder), entity.value)
+  for (const entity of vault.entities) {
+    // When a surname shares a full name's placeholder, the full name (added first) is put back.
+    const key = placeholderKey(entity.placeholder)
+    if (!valueByKey.has(key)) valueByKey.set(key, entity.value)
+  }
 
   return text.replace(
     PLACEHOLDER_ANY,

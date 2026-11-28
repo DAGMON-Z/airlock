@@ -194,7 +194,7 @@ function AnswerCard({ answer, redactedText, onRetry, onBackToCheck }: AnswerCard
               {leaks.length > 0 && (
                 <ul className="leak-list">
                   {leaks.map((leak) => (
-                    <li key={leak.placeholder}>
+                    <li key={leak.value}>
                       <span className={`type-tag type--${leak.type}`}>
                         {TYPE_LABELS[leak.type]}
                       </span>

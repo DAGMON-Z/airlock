@@ -79,6 +79,48 @@ describe('detectPatterns', () => {
     const found = detectPatterns('MRN: 448812 and again MRN:   448812')
     expect(found.map((f) => f.value)).toEqual(['448812'])
   })
+
+  it('flags names after a label, a title, or "in the name of"', () => {
+    const text = [
+      'Patient name: Samira Noor Haddad',
+      'TENANT: Lina Mahmoud Serag, National ID 1',
+      'Referring doctor: Dr. Karim Adel Mansour',
+      'Dear Ms. Adel,',
+      'payable in the name of Omar Tarek Fawzy.',
+    ].join('\n')
+    const names = detectPatterns(text).filter((f) => f.type === 'NAME').map((f) => f.value)
+    expect(names).toEqual(['Samira Noor Haddad', 'Lina Mahmoud Serag', 'Karim Adel Mansour', 'Adel', 'Omar Tarek Fawzy'])
+  })
+
+  it('never lets a name run onto the next line or swallow lowercase words', () => {
+    expect(valuesOf(detectPatterns('Patient name: Samira Haddad\nDate Of Visit'))).toEqual(['Samira Haddad'])
+    expect(detectPatterns('the tenant pays a late fee')).toEqual([])
+    expect(detectPatterns('Name: please fill in')).toEqual([])
+  })
+
+  it('flags street addresses with their area and postcode', () => {
+    expect(valuesOf(detectPatterns('Lab, 14 Juniper Row, Block C, Riverside District, Cairo 11511\nTel'))).toEqual([
+      '14 Juniper Row, Block C, Riverside District, Cairo 11511',
+    ])
+    expect(valuesOf(detectPatterns('Property. Flat 4, 17 Acacia Road, Nasr City, Cairo, including parking.'))).toEqual([
+      'Flat 4, 17 Acacia Road, Nasr City, Cairo',
+    ])
+  })
+
+  it('flags a labelled clinic or employer as ORG', () => {
+    const found = detectPatterns('Requesting clinic: Lakeview Family Health Clinic, Maadi')
+    expect(found).toContainEqual({ value: 'Lakeview Family Health Clinic', type: 'ORG', source: 'pattern' })
+  })
+
+  it('does not flag test names or sentences as names or addresses', () => {
+    const text = [
+      'Vitamin D (25-OH) 22 nmol/L 50 - 125 LOW',
+      'Repeat the ferritin test in 8 weeks.',
+      'Either party may end this agreement with 60 days notice.',
+      'Doctor: please review',
+    ].join('\n')
+    expect(detectPatterns(text)).toEqual([])
+  })
 })
 
 describe('buildVault', () => {
@@ -90,6 +132,27 @@ describe('buildVault', () => {
     ])
     expect(vault.entities.map((e) => e.placeholder)).toEqual(['[NAME_1]', '[NAME_2]', '[ID_1]'])
     expect(vault.entities.every((e) => e.redacted)).toBe(true)
+  })
+
+  it('gives a surname on its own the placeholder of the full name it belongs to', () => {
+    const vault = buildVault([
+      { value: 'Adel', type: 'NAME', source: 'pattern' },
+      { value: 'Yasmin Kareem Adel', type: 'NAME', source: 'pattern' },
+      { value: 'Mona Ali', type: 'NAME', source: 'pattern' },
+    ])
+    expect(vault.entities.map((e) => [e.value, e.placeholder])).toEqual([
+      ['Yasmin Kareem Adel', '[NAME_1]'],
+      ['Mona Ali', '[NAME_2]'],
+      ['Adel', '[NAME_1]'],
+    ])
+    const sent = applyVault('Ms. Yasmin Kareem Adel\nDear Ms. Adel,', vault)
+    expect(sent).toBe('Ms. [NAME_1]\nDear Ms. [NAME_1],')
+    expect(rehydrate('Write to [NAME_1].', vault)).toBe('Write to Yasmin Kareem Adel.')
+    // Showing the full name shows the surname too: they are one person.
+    expect(toggleEntity(vault, '[NAME_1]').entities.filter((e) => !e.redacted).map((e) => e.value)).toEqual([
+      'Yasmin Kareem Adel',
+      'Adel',
+    ])
   })
 
   it('deduplicates case-insensitively and ignores values shorter than 2 characters', () => {
@@ -131,9 +194,9 @@ describe('applyVault and rehydrate', () => {
   })
 
   it('replaces longest values first so "Ahmed Hassan" wins over "Ahmed"', () => {
-    const vault = vaultOf(['Ahmed', 'NAME'], ['Ahmed Hassan', 'NAME'])
+    const vault = vaultOf(['Ahmed', 'OTHER'], ['Ahmed Hassan', 'NAME'])
     const redacted = applyVault('Ahmed Hassan signed; Ahmed paid.', vault)
-    expect(redacted).toBe('[NAME_2] signed; [NAME_1] paid.')
+    expect(redacted).toBe('[NAME_1] signed; [OTHER_1] paid.')
   })
 
   it('does not replace inside an already-inserted placeholder', () => {
