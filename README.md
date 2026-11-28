@@ -17,6 +17,8 @@ Built for [#BuildHybridAI 2026](https://firebasehybridaihackathon.devpost.com/) 
 
 People hold documents they need explained but don't want to upload: blood test results, rental contracts, bank letters. Today they choose between privacy (keep it, stay confused) and help (upload it, hand a company their name, ID and health data). Airlock removes that trade-off.
 
+**Who it's for:** anyone who has to act on a document written for experts: a patient reading lab results before the next appointment, a tenant checking a lease before signing, someone caring for a parent and juggling their discharge notes and medication, a person handling a bank or government letter in a second language. These are exactly the documents that carry a name, ID number, address and health or financial details together, and the people who most need an explanation are often the ones least able to judge what is safe to paste into a chatbot.
+
 ## How it works
 
 1. **Add** a document: paste text or choose a photo.
@@ -37,7 +39,7 @@ Each model does a job the other cannot:
 
 A final check runs before every cloud call: if any hidden value is still present in the outgoing text, the request is blocked.
 
-Every answer shows where it was produced, using `response.inferenceSource`.
+Every answer shows how it was made: which model found and hid the details on the device, which model explained the safe version (from `response.inferenceSource`, in the cloud or on-device when offline), and that the real details were put back locally. The handoff is visible, not just claimed.
 
 All model calls go through Firebase AI Logic (`firebase/ai`). See `src/lib/ai.ts`.
 
@@ -80,10 +82,10 @@ All model calls go through Firebase AI Logic (`firebase/ai`). See `src/lib/ai.ts
 ## Try it (for judges)
 
 1. Open **https://airlock-35fc7.web.app** in desktop Chrome.
-2. Click an example under **Try an example**, for instance **Blood test report** (all examples are fictional).
+2. Click an example under **Try an example** (all are fictional). **Message about a surgery** shows the on-device model best: it has no labels, so pattern matching finds nothing and Gemini Nano finds every name and place. **Blood test report** shows the pattern safety net on a structured form.
 3. Click **Hide my details**. The Check screen shows what stays on the device and exactly what will be sent.
 4. Click **Send the safe version**. The cloud answer comes back with placeholders, and your device puts the real details back in.
-5. Open **See exactly what the AI received** to confirm no hidden detail left the device.
+5. Read **How this answer was made** under the answer, and open **See exactly what the AI received** to confirm no hidden detail left the device.
 
 On-device AI: if the status pill says **Download now** or **Start download**, click it. If it stays at 0%, turn on `chrome://flags/#gemma4-for-built-in-ai` and relaunch Chrome ([details](#turn-on-the-on-device-model-in-chrome)). Without the model the app still works with the pattern check (numbers, emails, labelled names, addresses and clinics).
 
