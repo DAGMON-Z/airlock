@@ -115,6 +115,8 @@ npm run dev
 2. Open `chrome://flags/#prompt-api-multimodal-input` and set it to **Enabled** (needed to read photos), then click **Relaunch**.
 3. Open Airlock and click **Download now** in the status pill. Chrome only starts the download after a click on a page that uses the model, and `chrome://on-device-internals` shows its progress. The first download is several GB.
 
+If the model downloads but every on-device call fails with "The model process crashed too many times" (seen on Linux with Intel graphics under Wayland), run the model on the CPU: start Chrome with `--enable-features=OnDeviceModelForceCpuBackend` (on Arch, put that line in `~/.config/chrome-flags.conf`), then click **Reset** next to the crash count in `chrome://on-device-internals` > Broker State.
+
 Without the on-device model, Airlock still works in a reduced mode: only the pattern check runs. It catches numbers, emails, labelled names ("Patient name:", "Tenant:", "Dr."), street addresses and labelled clinics, and you select anything else it missed.
 
 ## Tests
