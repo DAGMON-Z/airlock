@@ -111,8 +111,8 @@ npm run dev
 
 ### Turn on the on-device model in Chrome
 
-1. Open `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input` and set it to **Enabled**, then relaunch Chrome.
-2. Open Airlock and click **Download now** (or **Start download**) in the status pill. Chrome only starts the download after a click on a page that uses the model; `chrome://on-device-internals` shows its progress. The first download is several GB and can take a while.
+1. Open `chrome://flags/#prompt-api-multimodal-input` and set it to **Enabled**, then relaunch Chrome.
+2. Open Airlock and click **Download now** (or **Start download**) in the status pill. If it stays at 0%, open `chrome://components`, find **Optimization Guide On Device Model** and click **Check for update**. Chrome only starts the download after a click on a page that uses the model; `chrome://on-device-internals` shows its progress. The first download is several GB and can take a while.
 
 Without the on-device model, Airlock still works in a reduced mode: only the pattern check runs. It catches numbers, emails, labelled names ("Patient name:", "Tenant:", "Dr."), street addresses and labelled clinics, and you select anything else it missed.
 

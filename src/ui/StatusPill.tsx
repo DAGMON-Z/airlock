@@ -11,14 +11,15 @@ interface StatusPillProps {
 /** How long a download may sit at no progress before we explain how to unblock it. */
 const STALL_MS = 20_000
 
-const FLAGS = [
+const STEPS = [
+  { url: 'chrome://flags/#prompt-api-multimodal-input', action: <>set it to <strong>Enabled</strong> and relaunch Chrome</> },
   {
-    url: 'chrome://flags/#optimization-guide-on-device-model',
-    setTo: 'Enabled BypassPerfRequirement',
-  },
-  {
-    url: 'chrome://flags/#prompt-api-for-gemini-nano-multimodal-input',
-    setTo: 'Enabled',
+    url: 'chrome://components',
+    action: (
+      <>
+        find <strong>Optimization Guide On Device Model</strong> and click <strong>Check for update</strong>
+      </>
+    ),
   },
 ]
 
@@ -62,8 +63,7 @@ function CopyLink({ url }: { url: string }) {
 
 /**
  * Pages cannot open chrome:// links or change Chrome's settings, so the best we can do is
- * show the exact steps. Chrome skips the download on devices it rates as too slow; the first
- * flag lifts that check.
+ * show the exact steps: enable the Prompt API flag, then make Chrome fetch the queued model.
  */
 function ChromeSetupHelp({ summary }: { summary: string }) {
   return (
@@ -71,18 +71,18 @@ function ChromeSetupHelp({ summary }: { summary: string }) {
       <summary>{summary}</summary>
       <div className="status-help">
         <p className="muted">
-          Chrome decides whether to download its on-device AI, and skips devices it rates as too
-          slow. To download it anyway:
+          Chrome downloads its on-device AI in the background and sometimes leaves it queued. To
+          start it:
         </p>
         <ol>
-          {FLAGS.map((flag) => (
-            <li key={flag.url}>
-              Paste this into the address bar and set it to <strong>{flag.setTo}</strong>:
-              <CopyLink url={flag.url} />
+          {STEPS.map((step) => (
+            <li key={step.url}>
+              Paste this into the address bar, then {step.action}:
+              <CopyLink url={step.url} />
             </li>
           ))}
           <li>
-            Click <strong>Relaunch</strong>, come back here and click <strong>Start download</strong>.
+            Come back here and click <strong>Start download</strong>.
           </li>
         </ol>
         <p className="muted">
@@ -98,7 +98,7 @@ export function StatusPill({ status, progress, onDownload }: StatusPillProps) {
   const percent =
     progress === null ? null : Math.round(Math.min(1, Math.max(0, progress)) * 100)
 
-  // A download that never moves past 0% is almost always Chrome's hardware check.
+  // A download that never moves past 0% is usually still queued inside Chrome.
   const noProgress = status === 'downloading' && (percent === null || percent === 0)
   const [stalled, setStalled] = useState(false)
   useEffect(() => {
