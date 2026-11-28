@@ -11,16 +11,11 @@ interface StatusPillProps {
 /** How long a download may sit at no progress before we explain how to unblock it. */
 const STALL_MS = 20_000
 
+// In current Chrome the default Prompt API model (Gemini Nano v3) can stay queued forever;
+// "Gemma 4 for Built-in AI" switches every built-in AI API to Gemini Nano 4, which downloads.
 const STEPS = [
-  { url: 'chrome://flags/#prompt-api-multimodal-input', action: <>set it to <strong>Enabled</strong> and relaunch Chrome</> },
-  {
-    url: 'chrome://components',
-    action: (
-      <>
-        find <strong>Optimization Guide On Device Model</strong> and click <strong>Check for update</strong>
-      </>
-    ),
-  },
+  { url: 'chrome://flags/#gemma4-for-built-in-ai', action: <>set it to <strong>Enabled</strong></> },
+  { url: 'chrome://flags/#prompt-api-multimodal-input', action: <>set it to <strong>Enabled</strong></> },
 ]
 
 function copyFor(status: LocalModelStatus, percent: number | null): string {
@@ -63,7 +58,7 @@ function CopyLink({ url }: { url: string }) {
 
 /**
  * Pages cannot open chrome:// links or change Chrome's settings, so the best we can do is
- * show the exact steps: enable the Prompt API flag, then make Chrome fetch the queued model.
+ * show the exact steps: switch Chrome to Gemini Nano 4 and allow image input.
  */
 function ChromeSetupHelp({ summary }: { summary: string }) {
   return (
@@ -71,8 +66,8 @@ function ChromeSetupHelp({ summary }: { summary: string }) {
       <summary>{summary}</summary>
       <div className="status-help">
         <p className="muted">
-          Chrome downloads its on-device AI in the background and sometimes leaves it queued. To
-          start it:
+          Current Chrome can leave its older on-device model queued forever. Switch it to Gemini
+          Nano 4:
         </p>
         <ol>
           {STEPS.map((step) => (
@@ -82,7 +77,7 @@ function ChromeSetupHelp({ summary }: { summary: string }) {
             </li>
           ))}
           <li>
-            Come back here and click <strong>Start download</strong>.
+            Click <strong>Relaunch</strong>, come back here and click <strong>Download now</strong>.
           </li>
         </ol>
         <p className="muted">

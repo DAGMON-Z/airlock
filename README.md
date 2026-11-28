@@ -85,7 +85,7 @@ All model calls go through Firebase AI Logic (`firebase/ai`). See `src/lib/ai.ts
 4. Click **Send the safe version**. The cloud answer comes back with placeholders, and your device puts the real details back in.
 5. Open **See exactly what the AI received** to confirm no hidden detail left the device.
 
-On-device AI: if the status pill says **Download now** or **Start download**, click it. Chrome only starts the Gemini Nano download after a click, and `chrome://on-device-internals` shows its progress. Without the model the app still works with the pattern check (numbers, emails, labelled names, addresses and clinics).
+On-device AI: if the status pill says **Download now** or **Start download**, click it. If it stays at 0%, turn on `chrome://flags/#gemma4-for-built-in-ai` and relaunch Chrome ([details](#turn-on-the-on-device-model-in-chrome)). Without the model the app still works with the pattern check (numbers, emails, labelled names, addresses and clinics).
 
 ## Built during the submission period
 
@@ -111,8 +111,9 @@ npm run dev
 
 ### Turn on the on-device model in Chrome
 
-1. Open `chrome://flags/#prompt-api-multimodal-input` and set it to **Enabled**, then relaunch Chrome.
-2. Open Airlock and click **Download now** (or **Start download**) in the status pill. If it stays at 0%, open `chrome://components`, find **Optimization Guide On Device Model** and click **Check for update**. Chrome only starts the download after a click on a page that uses the model; `chrome://on-device-internals` shows its progress. The first download is several GB and can take a while.
+1. Open `chrome://flags/#gemma4-for-built-in-ai` and set it to **Enabled**. This switches Chrome's built-in AI to Gemini Nano 4; without it, current Chrome can leave the older default model queued at 0% forever.
+2. Open `chrome://flags/#prompt-api-multimodal-input` and set it to **Enabled** (needed to read photos), then click **Relaunch**.
+3. Open Airlock and click **Download now** in the status pill. Chrome only starts the download after a click on a page that uses the model, and `chrome://on-device-internals` shows its progress. The first download is several GB.
 
 Without the on-device model, Airlock still works in a reduced mode: only the pattern check runs. It catches numbers, emails, labelled names ("Patient name:", "Tenant:", "Dr."), street addresses and labelled clinics, and you select anything else it missed.
 
