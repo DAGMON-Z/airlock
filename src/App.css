@@ -1139,3 +1139,67 @@
 .flag-row code {
   overflow-wrap: anywhere;
 }
+
+/* ---------- Hybrid handoff trail ---------- */
+
+.handoff {
+  margin: 4px 0 6px;
+}
+
+.handoff-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.handoff-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: stage;
+}
+
+.handoff-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  counter-increment: stage;
+}
+
+.handoff-stage--device {
+  background: var(--safe-soft);
+  color: var(--safe-ink);
+}
+
+.handoff-stage--cloud {
+  background: var(--leave-soft);
+  color: var(--leave);
+}
+
+.handoff-where {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.handoff-where::before {
+  content: counter(stage) " · ";
+}
+
+.handoff-detail {
+  color: var(--ink-soft);
+}
+
+@media (max-width: 799px) {
+  .handoff-list {
+    grid-template-columns: 1fr;
+  }
+}

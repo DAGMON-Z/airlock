@@ -324,3 +324,13 @@ describe('chunkText', () => {
     expect(chunkText(line, 10)).toEqual([line])
   })
 })
+
+describe('samples', () => {
+  it('the family message has no labels, so the pattern check alone finds none of its names or places', async () => {
+    const { samples } = await import('./samples')
+    const message = samples.find((sample) => sample.id === 'family-message')
+    expect(message).toBeDefined()
+    const found = detectPatterns(message!.text).filter((f) => ['NAME', 'ORG', 'ADDRESS'].includes(f.type))
+    expect(found).toEqual([])
+  })
+})

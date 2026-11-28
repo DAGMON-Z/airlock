@@ -94,4 +94,15 @@ You can call us on 0800 555 0100 or visit any branch with a valid ID.
 Yours sincerely,
 Customer Services, Northgate Bank`,
   },
+  {
+    // No labels or titles: only the on-device model can find these details.
+    id: 'family-message',
+    title: 'Message about a surgery',
+    kind: 'Personal message',
+    text: `Hi, it's Hana. My brother Youssef had an arthroscopic meniscectomy on his left knee at Al Salam Hospital last Tuesday. Our neighbour Mariam drove him home to Zamalek afterwards.
+
+The surgeon, Mostafa Nabil, prescribed enoxaparin 40 mg once a day for 10 days and said to call him if the swelling gets worse or the calf feels hot or tight. Youssef is diabetic and his blood sugar has been around 190 mg/dL since the operation.
+
+What should we watch for, and is the sugar level something to worry about?`,
+  },
 ]

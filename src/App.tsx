@@ -123,6 +123,7 @@ export default function App() {
           <StepUnderstand
             redactedText={redactedText}
             vault={vault}
+            detectedBy={detectedBy}
             onBackToCheck={() => dispatch({ type: 'goto', step: 2 })}
             onStartOver={() => dispatch({ type: 'reset' })}
           />

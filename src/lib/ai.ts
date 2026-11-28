@@ -410,7 +410,8 @@ function sourceOf(raw: InferenceSource | undefined): InferenceWhere {
   return raw === InferenceSource.ON_DEVICE ? 'on_device' : 'in_cloud'
 }
 
-function cloudModelName(): string {
+/** The cloud model that explains documents, for display. */
+export function cloudModelName(): string {
   return readEnv(import.meta.env.VITE_CLOUD_MODEL) ?? DEFAULT_CLOUD_MODEL
 }
 

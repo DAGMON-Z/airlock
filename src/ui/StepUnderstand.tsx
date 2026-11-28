@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react'
-import { LeakError, explain } from '../lib/ai'
+import { LeakError, cloudModelName, explain } from '../lib/ai'
 import { applyVault } from '../lib/redact'
 import type { Entity, InferenceWhere, Vault } from '../lib/types'
 import { AnswerText } from './AnswerText'
+import { HandoffTrail } from './HandoffTrail'
 import { TYPE_LABELS, messageOf } from './labels'
 
 const LEAK_TITLE = 'Stopped: these details were still visible, so nothing was sent'
@@ -40,6 +41,8 @@ interface StepUnderstandProps {
   /** The document with hidden details replaced, exactly what the AI gets. */
   redactedText: string
   vault: Vault
+  /** Who found the hidden details, for the handoff trail. */
+  detectedBy: InferenceWhere
   onBackToCheck: () => void
   onStartOver: () => void
 }
@@ -47,6 +50,7 @@ interface StepUnderstandProps {
 export function StepUnderstand({
   redactedText,
   vault,
+  detectedBy,
   onBackToCheck,
   onStartOver,
 }: StepUnderstandProps) {
@@ -136,6 +140,8 @@ export function StepUnderstand({
           key={answer.id}
           answer={answer}
           redactedText={redactedText}
+          vault={vault}
+          detectedBy={detectedBy}
           onRetry={() => retry(answer)}
           onBackToCheck={onBackToCheck}
         />
@@ -177,9 +183,11 @@ interface AnswerCardProps {
   redactedText: string
   onRetry: () => void
   onBackToCheck: () => void
+  vault: Vault
+  detectedBy: InferenceWhere
 }
 
-function AnswerCard({ answer, redactedText, onRetry, onBackToCheck }: AnswerCardProps) {
+function AnswerCard({ answer, redactedText, vault, detectedBy, onRetry, onBackToCheck }: AnswerCardProps) {
   const { question, sentQuestion, status, text, rawText, source, error, leaks } = answer
 
   if (status === 'error') {
@@ -237,6 +245,9 @@ function AnswerCard({ answer, redactedText, onRetry, onBackToCheck }: AnswerCard
 
       {status === 'done' && (
         <div className="answer-meta">
+          {(source === 'on_device' || source === 'in_cloud') && (
+            <HandoffTrail detectedBy={detectedBy} answeredBy={source} cloudModel={cloudModelName()} vault={vault} />
+          )}
           {source === 'on_device' && (
             <span className="badge badge--safe">Answered on this device (offline)</span>
           )}

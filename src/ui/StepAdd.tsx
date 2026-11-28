@@ -135,7 +135,7 @@ export function StepAdd({ text, checkedText, vault, onTextChange, onAdvance }: S
   }
 
   const busy = hiding || reading
-  const examples = samples.slice(0, 3)
+  const examples = samples
 
   return (
     <section className="step step-add" aria-labelledby={headingId}>
