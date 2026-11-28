@@ -113,7 +113,15 @@ export async function getLocalStatus(): Promise<LocalModelStatus> {
 function deviceModel(responseConstraint?: object): GenerativeModel {
   return getGenerativeModel(getAi(), {
     mode: InferenceMode.ONLY_ON_DEVICE,
-    onDeviceParams: responseConstraint ? { promptOptions: { responseConstraint } } : undefined,
+    onDeviceParams: {
+      // Declaring languages and image input up front lets Chrome attest output safety (it warns
+      // otherwise) and matches what getLocalStatus() checks availability for.
+      createOptions: {
+        expectedInputs: [{ type: 'text', languages: ['en'] }, { type: 'image' }],
+        expectedOutputs: [{ type: 'text', languages: ['en'] }],
+      },
+      ...(responseConstraint ? { promptOptions: { responseConstraint } } : {}),
+    },
   })
 }
 
