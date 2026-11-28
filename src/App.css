@@ -1111,3 +1111,31 @@
     font-size: 0.85rem;
   }
 }
+
+/* The pill becomes a card while its help is open. */
+.status-pill:has(.status-details[open]) {
+  border-radius: 16px;
+}
+
+.status-details[open] {
+  flex-basis: 100%;
+}
+
+.status-help ol {
+  margin: 8px 0;
+  padding-left: 1.4em;
+  display: grid;
+  gap: 8px;
+}
+
+.flag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 4px;
+}
+
+.flag-row code {
+  overflow-wrap: anywhere;
+}
